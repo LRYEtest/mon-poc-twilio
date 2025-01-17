@@ -52,12 +52,35 @@ const adresse = extractAddress(messageText);
       //    On veut : Date, Expéditeur, (Adresse s'il y en a), Description
       //    Pour l'instant, on fait simple : on met l'heure, l'expéditeur, et le message tel quel
       const newRow = [
-        new Date().toISOString(),  // Date en ISO
-        from,                      // Expéditeur
-        adresse || "",                        // Adresse (vide pour l'instant)
-        messageText                // Description / message
-      ];
+       // Au lieu de : 
+// new Date().toISOString()
 
+// Fais :
+const dateObj = new Date();
+const options = { 
+  timeZone: "Europe/Paris",
+  hour12: false,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit"
+};
+
+// dateString ressemblera à "17/01/2025, 14:08" pour le 17 janvier 2025 à 14h08
+let dateString = dateObj.toLocaleString("fr-FR", options);
+// On enlève la virgule
+dateString = dateString.replace(',', '');
+
+// Maintenant, dateString = "17/01/2025 14:08"
+
+// Dans ton tableau final :
+const newRow = [
+  dateString,    // Colonne A (format JJ/MM/AAAA HH:MM)
+  from,          // Colonne B
+  adresse || "", // Colonne C
+  descriptionCorrigee // Colonne D
+];
       // 6) Envoyer la requête "append"
       await sheets.spreadsheets.values.append({
         spreadsheetId,
