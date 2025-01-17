@@ -1,4 +1,18 @@
 import { google } from 'googleapis';
+// 1) Notre Regex pour repérer une adresse
+// Exemple : "12 rue de la République"
+const ADDRESS_REGEX = /(\d+\s+(?:rue|avenue|av|boulevard|bd|allée|place)\s+[^\.,]+)/i;
+
+function extractAddress(messageText) {
+  // On applique la regex au texte qu'on reçoit
+  const match = messageText.match(ADDRESS_REGEX);
+  if (match) {
+    // match[0] contient le texte capturé (ex. "12 rue de la République")
+    return match[0];
+  }
+  // Sinon, on renvoie null
+  return null;
+}
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
@@ -12,6 +26,8 @@ export default async function handler(req, res) {
 
     const from = parsedBody.From;
     const messageText = parsedBody.Body || "";
+// 2) Extraire l'adresse
+const adresse = extractAddress(messageText);
 
     // 2) Authentifier auprès de Google Sheets
     try {
@@ -38,7 +54,7 @@ export default async function handler(req, res) {
       const newRow = [
         new Date().toISOString(),  // Date en ISO
         from,                      // Expéditeur
-        "",                        // Adresse (vide pour l'instant)
+        adresse || "",                        // Adresse (vide pour l'instant)
         messageText                // Description / message
       ];
 
