@@ -13,6 +13,46 @@ function extractAddress(messageText) {
   // Sinon, on renvoie null
   return null;
 }
+// Correction via LanguageTool (petit quota gratuit)
+async function correctText(text) {
+  // URL de l'API publique LanguageTool
+  const url = 'https://api.languagetool.org/v2/check';
+
+  // On prépare les paramètres à envoyer (langue = fr)
+  const params = new URLSearchParams();
+  params.append('text', text);
+  params.append('language', 'fr');
+
+  // On utilise fetch (Node 18+ sur Vercel l'a par défaut)
+  // Si besoin, "npm install node-fetch" puis "import fetch from 'node-fetch';"
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params
+  });
+
+  // "data" contient les correspondances (matches) de fautes/erreurs
+  const data = await response.json();
+  // data.matches = tableau d'erreurs relevées
+
+  let correctedText = text;
+  // On parcourt les erreurs de la fin au début (pour ne pas décaler les indices)
+  for (let i = data.matches.length - 1; i >= 0; i--) {
+    const match = data.matches[i];
+    // On prend la 1re suggestion
+    if (match.replacements && match.replacements.length > 0) {
+      const replacement = match.replacements[0].value;
+      const startIndex = match.offset;
+      const endIndex = startIndex + match.length;
+      // On reconstitue la chaîne corrigée
+      correctedText =
+        correctedText.slice(0, startIndex) +
+        replacement +
+        correctedText.slice(endIndex);
+    }
+  }
+  return correctedText;
+}
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
@@ -28,6 +68,8 @@ export default async function handler(req, res) {
     const messageText = parsedBody.Body || "";
 // 2) Extraire l'adresse
 const adresse = extractAddress(messageText);
+// 2) Corriger le texte
+const correctedText = await correctText(messageText);
 
     // 2) Authentifier auprès de Google Sheets
     try {
@@ -56,7 +98,7 @@ const adresse = extractAddress(messageText);
         
         from,                      // Expéditeur
         adresse || "",                        // Adresse (vide pour l'instant)
-        messageText                // Description / message
+        correctedText                // Description / message
       ];
 
       // 6) Envoyer la requête "append"
