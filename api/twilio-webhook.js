@@ -120,7 +120,7 @@ const correctedText = await correctText(messageText);
     res.setHeader('Content-Type', 'text/xml');
     res.status(200).send(`
       <Response>
-        <Message>Nous avons bien reçu votre, merci !</Message>
+        <Message>Nous avons bien reçu votre message, merci !</Message>
       </Response>
     `);
   } else {
